@@ -1,1 +1,18 @@
-[]
+{
+  "emails": {
+    "5d49ddc7-2d99-4369-a898-3e173039db31": {
+      "id": "5d49ddc7-2d99-4369-a898-3e173039db31",
+      "subject": "TestingTesting123",
+      "body": "This is a test for assignment 1",
+      "ground_truth_topic": "Homework",
+      "created_at": "2026-02-25T20:22:23.487049+00:00"
+    },
+    "b8adcab1-db65-4f2a-9e25-59879e26db8a": {
+      "id": "b8adcab1-db65-4f2a-9e25-59879e26db8a",
+      "subject": "Your booking is complete",
+      "body": "Your booking with Hilton Hotels is complete.",
+      "ground_truth_topic": "Reservations",
+      "created_at": "2026-02-25T21:30:23.865165+00:00"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import os
 import json
+import tempfile
 import numpy as np
 from typing import Dict, Any, List
 from sentence_transformers import SentenceTransformer
@@ -19,9 +20,29 @@ class EmailClassifierModel:
     
     def _load_topic_data(self) -> Dict[str, Dict[str, Any]]:
         """Load topic data from data/topic_keywords.json"""
-        data_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'data', 'topic_keywords.json')
+        data_file = self._get_topic_data_file_path()
         with open(data_file, 'r') as f:
             return json.load(f)
+
+    def _get_topic_data_file_path(self) -> str:
+        return os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+            'data',
+            'topic_keywords.json'
+        )
+
+    def _save_topic_data(self, topic_data: Dict[str, Dict[str, Any]]) -> None:
+        data_file = self._get_topic_data_file_path()
+        data_dir = os.path.dirname(data_file)
+
+        os.makedirs(data_dir, exist_ok=True)
+
+        with tempfile.NamedTemporaryFile('w', delete=False, dir=data_dir, encoding='utf-8') as tmp:
+            json.dump(topic_data, tmp, indent=2)
+            tmp.write("\n")
+            tmp_path = tmp.name
+
+        os.replace(tmp_path, data_file)
 
     def _compute_topic_embeddings(self) -> Dict[str, np.ndarray]:
         """Pre-compute embeddings for all topic descriptions"""
@@ -92,3 +113,24 @@ class EmailClassifierModel:
     def get_all_topics_with_descriptions(self) -> Dict[str, str]:
         """Get all topics with their descriptions"""
         return {topic: self.get_topic_description(topic) for topic in self.topics}
+
+    def add_new_topic(self, topic: str, description: str) -> str:
+        topic_key = (topic or "").strip().lower()
+        description_value = (description or "").strip()
+
+        if not topic_key:
+            raise ValueError("Topic must not be empty")
+        if not description_value:
+            raise ValueError("Description must not be empty")
+        if topic_key in self.topic_data:
+            raise ValueError(f"Topic '{topic_key}' already exists")
+
+        updated_topic_data = dict(self.topic_data)
+        updated_topic_data[topic_key] = {"description": description_value}
+        self._save_topic_data(updated_topic_data)
+
+        self.topic_data = updated_topic_data
+        self.topics = list(self.topic_data.keys())
+        self.topic_embeddings[topic_key] = self.model.encode(description_value, convert_to_numpy=True)
+
+        return topic_key
